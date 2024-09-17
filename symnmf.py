@@ -2,6 +2,8 @@ import numpy as np
 import symnmf  # This is the C extension module
 import sys
 
+
+
 def main():
   # set seed:
   np.random.seed(1234)
