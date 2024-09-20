@@ -5,11 +5,12 @@
 #include "symnmf.h"
 #include "mat_utils.h"
 
-#define EPSILON 1e-4
+#define EPSILON 0.0001
 #define MAX_ITER 300
+#define BETA 0.5
 
-/* Function to calculate Euclidean distance between two points */
-double euclidean_distance(double *x, double *y, int d) {
+/* Function to calculate Squared Euclidean distance between two cord vectors */
+double squared_euclidean_distance(double *x, double *y, int d) {
   double sum = 0.0;
   int i;
   for (i = 0; i < d; i++) {
@@ -34,7 +35,7 @@ Matrix* calc_sym(Matrix *X) {
       if (i == j) {
         (A->cords)[i][j] = 0;
       } else if (i < j){
-        (A->cords)[i][j] = exp(-euclidean_distance(cords[i], cords[j], X->cols)/2);
+        (A->cords)[i][j] = exp(-squared_euclidean_distance(cords[i], cords[j], X->cols)/2);
       } else {
         /* i > j, the matrix is symetric */
         (A->cords)[i][j] = (A->cords)[j][i];
@@ -101,8 +102,14 @@ Matrix* calc_norm(Matrix *A, Matrix *D) {
   }
   diag_pow(D, -0.5);
   first_mul = matrix_mul(D, A);
+  if (first_mul == NULL){
+    return NULL;
+  }
   W = matrix_mul(first_mul, D);
-
+  if (W == NULL){
+    free_matrix(first_mul);
+    return NULL;
+  }
   return W;
 }
 
@@ -115,32 +122,115 @@ void norm(Matrix *X){
   }
   D = calc_ddg(A);
   if (D == NULL){
-    free_matrix(X);
-    free_matrix(A);
+    free_matrix2(X, A);
     error_handling();
   }
   W = calc_norm(A, D);
-  free_matrix(A);
-  free_matrix(D);
+  free_matrix2(A, D);
   if (W == NULL)
   {
-      free_matrix(X);
-      error_handling();
+    free_matrix(X);
+    error_handling();
   }
   print_matrix(W);
   free_matrix(W);
 }
 
+double squared_frobenius_norm(Matrix *H, Matrix *H_next){
+  double sum = 0.0;
+  int i, j;
+  for (i = 0; i < H->rows; i++){
+    for (j = 0; j < H->cols; j++){
+      sum += pow((H_next->cords)[i][j]-(H->cords)[i][j], 2);
+    }
+  }
+  return sum;
+}
+
+int check_convergence(Matrix *H, Matrix *H_next){
+  double sum = squared_frobenius_norm(H, H_next);
+  return (sum < EPSILON);
+}
+
+Matrix* update_H(Matrix *H, Matrix *W){
+  Matrix *numerator, *denominator, *temp;
+  int i, j;
+  double h, numer_val, denom_val;
+  Matrix *H_next = allocate_matrix(H->rows, H->cols);
+  if (H_next == NULL){
+    return NULL;
+  }
+  
+  // Calculate Numerator:
+  numerator = matrix_mul(W, H);
+  if (numerator == NULL){
+    free_matrix(H_next);
+    return NULL;
+  }
+  
+  // Calculate Denominator:
+  temp = matrix_mul(H, transpose(H));
+  if (temp == NULL){
+    free_matrix2(H_next, numerator);
+    return NULL;
+  }
+
+  denominator = matrix_mul(temp, H);
+  if (denominator == NULL){
+    free_matrix3(H_next, numerator, temp);
+    return NULL;
+  }
+  free_matrix(temp);
+  
+  // update H:
+  for (i = 0; i < H->rows; i++){
+    for (j = 0; j < H->cols; j++){
+      h = (H->cords)[i][j];
+      numer_val = (numerator->cords)[i][j];
+      denom_val = (denominator->cords)[i][j];
+      (H_next->cords)[i][j] = h*(1-BETA+BETA*(numer_val/denom_val));
+    }
+  }
+  free_matrix(H);
+  free_matrix(W);
+  return H_next;
+}
+
 /* Function to calculate symnmf */
-double** symnmf(double **H, double **W, int N, int d, int k){
-  return;
+Matrix* symnmf(Matrix *H, Matrix *W){
+  int i;
+  Matrix *H_next, *H_prev;
+
+  if (H == NULL){
+    free_matrix(W);
+    error_handling();
+  } 
+  else if (W == NULL){
+    free_matrix(H);
+    error_handling();
+  }
+  for (i=0; i < MAX_ITER; i++){
+    H_next = update_H(H, W);
+    if (H_next == NULL){
+      free_matrix(H);
+      free_matrix(W);
+      error_handling();
+    }
+    if(check_convergence(H, H_next)){
+      free_matrix(H);
+      break;
+    }
+    H_prev = H;
+    H = H_next;
+    free_matrix(H_prev);
+  }
+  return H_next;
 }
 
 int main(int argc, char *argv[]) {
   Matrix *matrix;
   if (argc != 3) {
-    printf("An Error Has Occurred\n");
-    return 1;
+    error_handling();
   }
 
   char *goal = argv[1];
@@ -149,8 +239,7 @@ int main(int argc, char *argv[]) {
   matrix = file_to_matrix(filename);
   if (matrix == NULL)
   {
-    printf("An Error Has Occurred\n");
-    return 1;
+    error_handling();
   }
 
   if (strcmp(goal, "sym") == 0)
