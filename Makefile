@@ -9,7 +9,7 @@ HEADERS = mat_utils.h symnmf.h utils.h
 all: symnmf
 
 symnmf: symnmf.o mat_utils.o utils.o
-	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
+	$(CC) $(CFLAGS) $^ -o $@ $(LFLAGS)
 
 symnmf.o: symnmf.c $(HEADERS)
 	$(CC) $(CFLAGS) -c $<

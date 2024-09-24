@@ -16,7 +16,7 @@ void free_to_row(Matrix* X, int row){
 
 void free_matrix(Matrix *A){
   if (A != NULL){
-    free__to_index(A, A->rows); /* frees matrix to the last row */
+    free_to_row(A, A->rows); /* frees matrix to the last row */
   }
 } 
 
@@ -54,16 +54,18 @@ Matrix* allocate_matrix(int rows, int cols){
 }
 
 Matrix* matrix_mul(Matrix* A, Matrix* B){
+  int i, j, k;
+  Matrix* result;
   if (A == NULL || B == NULL || A->cols != B->rows) {
-    return NULL; // Error: matrices cannot be multiplied
+    return NULL; /* Error: matrices cannot be multiplied */
   }
-  Matrix* result = allocate_matrix(A->rows, B->cols);
+  result = allocate_matrix(A->rows, B->cols);
   if (result == NULL) {
-    return NULL; // Error: memory allocation failed
+    return NULL; /* Error: memory allocation failed */
   }
-  for (int i = 0; i < A->rows; i++) {
-    for (int j = 0; j < B->cols; j++) {
-      for (int k = 0; k < A->cols; k++) {
+  for (i = 0; i < A->rows; i++) {
+    for (j = 0; j < B->cols; j++) {
+      for (k = 0; k < A->cols; k++) {
         result->cords[i][j] += A->cords[i][k] * B->cords[k][j];
       }
     }
@@ -81,12 +83,13 @@ void diag_pow(Matrix* X, int power){
 }
 
 Matrix* transpose(Matrix *X){
+  int i, j;
   Matrix* transposed = allocate_matrix(X->cols, X->rows);
   if (transposed == NULL) {
-    return NULL; // Error: memory allocation failed
+    return NULL; /* Error: memory allocation failed */
   }
-  for (int i = 0; i < X->rows; i++) {
-    for (int j = 0; j < X->cols; j++) {
+  for (i = 0; i < X->rows; i++) {
+    for (j = 0; j < X->cols; j++) {
       transposed->cords[j][i] = X->cords[i][j];
     }
   }
@@ -94,16 +97,15 @@ Matrix* transpose(Matrix *X){
 }
 
 void print_matrix(Matrix *X){
-  for (int i = 0; i < X->rows; i++) {
-    for (int j = 0; j < X->cols; j++) {
+  int i, j;
+  for (i = 0; i < X->rows; i++) {
+    for (j = 0; j < X->cols; j++) {
       printf("%.4f", X->cords[i][j]);
       if (j != X->cols - 1) {
-        printf(","); // No comma at the last column
+        printf(","); /* No comma at the last column */
       }
     }
-    if (i != X->rows - 1) {
-      printf("\n"); // No new line at the last row
-    }
+    printf("\n");
   }
 }
 

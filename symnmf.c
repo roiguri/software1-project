@@ -4,6 +4,7 @@
 #include <string.h>
 #include "symnmf.h"
 #include "mat_utils.h"
+#include "utils.h"
 
 #define EPSILON 0.0001
 #define MAX_ITER 300
@@ -22,11 +23,12 @@ double squared_euclidean_distance(double *x, double *y, int d) {
 /* Functions to calculate similarity matrix */
 Matrix* calc_sym(Matrix *X) {
   int i, j;
+  Matrix *A;
   double** cords = X->cords;
   if (X == NULL){
     return NULL;
   }
-  Matrix *A = allocate_matrix(X->rows, X->rows);
+  A = allocate_matrix(X->rows, X->rows);
   if (A == NULL){
     return NULL;
   }
@@ -50,7 +52,7 @@ void sym(Matrix *X) {
   if (sym_mat == NULL)
   {
     free_matrix(X);
-    error();
+    error_has_occured();
   }
   print_matrix(sym_mat);
   free_matrix(sym_mat);
@@ -61,10 +63,11 @@ void sym(Matrix *X) {
 /* Function to calculate diagonal degree matrix */
 Matrix* calc_ddg(Matrix *A) {
   int i, j;
+  Matrix *D;
   if (A == NULL){
     return NULL;
   }
-  Matrix *D = allocate_matrix(A->rows, A->rows);
+  D = allocate_matrix(A->rows, A->rows);
   if (D == NULL){
     return NULL;
   }
@@ -87,7 +90,7 @@ void ddg(Matrix *X) {
     if (D == NULL)
     {
         free_matrix(X);
-        error();
+        error_has_occured();
     }
     print_matrix(D);
     free_matrix(D);
@@ -95,7 +98,6 @@ void ddg(Matrix *X) {
 
 /* Function to calculate normalized similarity matrix */
 Matrix* calc_norm(Matrix *A, Matrix *D) {
-  int i, j;
   Matrix *first_mul, *W;
   if ((A == NULL) || (D == NULL)){
     return NULL;
@@ -118,19 +120,19 @@ void norm(Matrix *X){
   A = calc_sym(X);
   if (A == NULL){
     free_matrix(X);
-    error();
+    error_has_occured();
   }
   D = calc_ddg(A);
   if (D == NULL){
     free_matrix2(X, A);
-    error();
+    error_has_occured();
   }
   W = calc_norm(A, D);
   free_matrix2(A, D);
   if (W == NULL)
   {
     free_matrix(X);
-    error();
+    error_has_occured();
   }
   print_matrix(W);
   free_matrix(W);
@@ -161,14 +163,14 @@ Matrix* update_H(Matrix *H, Matrix *W){
     return NULL;
   }
   
-  // Calculate Numerator:
+  /* Calculate Numerator: */
   numerator = matrix_mul(W, H);
   if (numerator == NULL){
     free_matrix(H_next);
     return NULL;
   }
   
-  // Calculate Denominator:
+  /* Calculate Denominator: */
   temp = matrix_mul(H, transpose(H));
   if (temp == NULL){
     free_matrix2(H_next, numerator);
@@ -182,7 +184,7 @@ Matrix* update_H(Matrix *H, Matrix *W){
   }
   free_matrix(temp);
   
-  // update H:
+  /* update H: */
   for (i = 0; i < H->rows; i++){
     for (j = 0; j < H->cols; j++){
       h = (H->cords)[i][j];
@@ -203,18 +205,18 @@ Matrix* symnmf(Matrix *H, Matrix *W){
 
   if (H == NULL){
     free_matrix(W);
-    error();
+    error_has_occured();
   } 
   else if (W == NULL){
     free_matrix(H);
-    error();
+    error_has_occured();
   }
   for (i=0; i < MAX_ITER; i++){
     H_next = update_H(H, W);
     if (H_next == NULL){
       free_matrix(H);
       free_matrix(W);
-      error();
+      error_has_occured();
     }
     if(check_convergence(H, H_next)){
       free_matrix(H);
@@ -227,19 +229,25 @@ Matrix* symnmf(Matrix *H, Matrix *W){
   return H_next;
 }
 
+void test(Matrix* matrix){
+  diag_pow(matrix,2);
+  print_matrix(matrix);
+}
+
 int main(int argc, char *argv[]) {
   Matrix *matrix;
+  char *goal, *filename;
   if (argc != 3) {
-    error();
+    error_has_occured();
   }
 
-  char *goal = argv[1];
-  char *filename = argv[2];
+  goal = argv[1];
+  filename = argv[2];
 
   matrix = file_to_matrix(filename);
   if (matrix == NULL)
   {
-    error();
+    error_has_occured();
   }
 
   if (strcmp(goal, "sym") == 0)
@@ -253,6 +261,10 @@ int main(int argc, char *argv[]) {
   else if (strcmp(goal, "norm") == 0)
   {
     norm(matrix);
+  }
+  else if (strcmp(goal, "test") == 0)
+  {
+    test(matrix);
   }
   free_matrix(matrix);
   return 0;
