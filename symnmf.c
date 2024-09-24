@@ -50,7 +50,7 @@ void sym(Matrix *X) {
   if (sym_mat == NULL)
   {
     free_matrix(X);
-    error_handling();
+    error();
   }
   print_matrix(sym_mat);
   free_matrix(sym_mat);
@@ -87,7 +87,7 @@ void ddg(Matrix *X) {
     if (D == NULL)
     {
         free_matrix(X);
-        error_handling();
+        error();
     }
     print_matrix(D);
     free_matrix(D);
@@ -118,19 +118,19 @@ void norm(Matrix *X){
   A = calc_sym(X);
   if (A == NULL){
     free_matrix(X);
-    error_handling();
+    error();
   }
   D = calc_ddg(A);
   if (D == NULL){
     free_matrix2(X, A);
-    error_handling();
+    error();
   }
   W = calc_norm(A, D);
   free_matrix2(A, D);
   if (W == NULL)
   {
     free_matrix(X);
-    error_handling();
+    error();
   }
   print_matrix(W);
   free_matrix(W);
@@ -203,18 +203,18 @@ Matrix* symnmf(Matrix *H, Matrix *W){
 
   if (H == NULL){
     free_matrix(W);
-    error_handling();
+    error();
   } 
   else if (W == NULL){
     free_matrix(H);
-    error_handling();
+    error();
   }
   for (i=0; i < MAX_ITER; i++){
     H_next = update_H(H, W);
     if (H_next == NULL){
       free_matrix(H);
       free_matrix(W);
-      error_handling();
+      error();
     }
     if(check_convergence(H, H_next)){
       free_matrix(H);
@@ -230,7 +230,7 @@ Matrix* symnmf(Matrix *H, Matrix *W){
 int main(int argc, char *argv[]) {
   Matrix *matrix;
   if (argc != 3) {
-    error_handling();
+    error();
   }
 
   char *goal = argv[1];
@@ -239,7 +239,7 @@ int main(int argc, char *argv[]) {
   matrix = file_to_matrix(filename);
   if (matrix == NULL)
   {
-    error_handling();
+    error();
   }
 
   if (strcmp(goal, "sym") == 0)
