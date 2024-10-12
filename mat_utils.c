@@ -73,7 +73,7 @@ Matrix* matrix_mul(Matrix* A, Matrix* B){
   return result;
 }
 
-void diag_pow(Matrix* X, int power){
+void diag_pow(Matrix* X, double power){
   int i;
   for (i = 0; i < X->rows; i++){
     if (X->cords[i][i] != 0) { /* To avoid dividing by 0 */

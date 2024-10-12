@@ -20,7 +20,7 @@ void free_matrix2(Matrix *A, Matrix *B);
 void free_matrix3(Matrix *A, Matrix *B, Matrix *C);
 Matrix* allocate_matrix(int rows, int cols);
 Matrix* matrix_mul(Matrix* A, Matrix* B); /* memory allocation & error handling for return matrix */
-void diag_pow(Matrix* X, int power);
+void diag_pow(Matrix* X, double power);
 Matrix* transpose(Matrix *X);
 void print_matrix(Matrix *X);
 
